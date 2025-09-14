@@ -1,0 +1,48 @@
+{
+    "compilerOptions": {
+        /* 目标与运行时能力 */
+        "target": "ES2020", // 把 TS 转成哪一代 JS 语法。ES2020 够用（可用可选链、BigInt 等）。
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ES2021"
+        ], // 告诉 TS 你的运行环境有哪些内置 API：浏览器 DOM + ES 功能。
+        /* 模块与解析 */
+        "module": "ESNext", // 让打包器（webpack）来处理模块打包；保持原生 ESM。
+        "moduleResolution": "Bundler", // TS5 的“打包器式”解析，和 webpack/vite 的解析更一致（不强求文件后缀）。
+        // 如果你的 TS 版本 < 5，可改用 "NodeNext"
+        /* React / JSX */
+        "jsx": "react-jsx", // 使用 React 17+ 的新 JSX 变换（无需手写 import React）。
+        /* 严格性与输出 */
+        "strict": true, // 开启一揽子严格检查（强烈建议，早发现问题）。
+        "noEmit": true, // 不让 tsc 输出文件；打包交给 webpack。
+        "skipLibCheck": true, // 跳过 node_modules 的 .d.ts 检查（提升速度，日常足够）。
+        "isolatedModules": true, // 每个文件独立编译，利于 Babel/esbuild/ts-loader 等工具链。
+        /* 兼容性/易用性 */
+        "esModuleInterop": true, // 允许 CommonJS 默认导入写法（import x from 'cjs'）。
+        "allowSyntheticDefaultImports": true, // 没有默认导出的包也能用默认导入语法。
+        "forceConsistentCasingInFileNames": true, // 文件名大小写不一致时报错（跨平台更稳）。
+        "resolveJsonModule": true, // 允许 `import data from './x.json'`。
+        /* 路径别名（可选，但很实用） */
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ] // 这样就能 import "@/components/Btn"
+        },
+        /* 类型声明（可选） */
+        // "types": [
+        //     "webpack-env"
+        // ] // 注入 webpack 开发环境的全局类型（如 module.hot）
+        // 如果后面加了 Jest/Vitest/Cypress，对应再加：["webpack-env","jest"] 之类
+    },
+    /* 参与类型检查的文件范围 */
+    "include": [
+        "src"
+    ], // 你的前端源码目录
+    "exclude": [
+        "dist",
+        "build",
+        "node_modules"
+    ] // 不检查产物 & 依赖
+}
