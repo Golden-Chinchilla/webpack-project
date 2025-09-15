@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 // 根据你项目的真实路径改 import
-import { WalletConnect } from '../src/WalletConnect.tsx';
+import { WalletConnect } from '../../src/WalletConnect.tsx';
 
 describe('<WalletConnect />', () => {
     it('初始渲染：显示“连接钱包”按钮', () => {

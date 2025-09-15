@@ -1,24 +1,23 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// 1) mock WalletConnect（避免 INFURA_KEY 运行期报错）
-jest.mock('../WalletConnect.tsx', () => ({
+// ---- Mock WalletConnect：同时支持 default 与具名导出形式 ----
+jest.mock('../WalletConnect', () => ({
+    __esModule: true,
+    default: () => <div data-testid="wallet-connect">Wallet</div>,
     WalletConnect: () => <div data-testid="wallet-connect">Wallet</div>,
 }));
 
-// 2) mock ethers：parseEther、BrowserProvider、Contract
+// ---- Mock ethers（仅保留本测试需要的最小实现）----
 const createRedPacketMock = jest.fn();
 const claimMock = jest.fn();
-
 const contractOnMock = jest.fn();
 const txWaitMock = jest.fn().mockResolvedValue({});
 
 jest.mock('ethers', () => {
-    // 用最小实现模拟 ethers
     return {
-        // parseEther：直接返回一个可断言的 BigInt
+        // 解析 ETH 金额到 wei（简化实现，足以用于断言）
         parseEther: (v: string) => {
-            // 简单把 "0.1" -> 100000000000000000n，够测试用
             if (v.includes('.')) {
                 const [a, b] = v.split('.');
                 const padded = (b + '000000000000000000').slice(0, 18);
@@ -27,13 +26,14 @@ jest.mock('ethers', () => {
             return BigInt(v + '000000000000000000');
         },
 
-        // BrowserProvider / getSigner：按需返回假的 signer
+        // v6: BrowserProvider 提供 getSigner
         BrowserProvider: class {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             constructor(_eth: any) { }
             getSigner = async () => ({ address: '0xSigner' });
         },
 
-        // Contract：带 on/createRedPacket/claim
+        // 合约：提供 on / createRedPacket / claim
         Contract: class {
             address: string;
             abi: any;
@@ -52,14 +52,19 @@ jest.mock('ethers', () => {
             });
         },
 
-        // 其余导出避免 undefined
+        // 其他常用辅助（如果 App.tsx 没用到也无所谓）
         formatEther: (bn: bigint) => (Number(bn) / 1e18).toString(),
     };
 });
 
-import App from '../App';
+import App from '../../src/App.tsx';
 
-function fillAndClickCreate = async (amount: string, shares: string, expireAt: string) => {
+// ---------- Helpers：改为箭头函数 + 显式返回类型 ----------
+const fillAndClickCreate = async (
+    amount: string,
+    shares: string,
+    expireAt: string
+): Promise<void> => {
     const sendBox = screen.getByRole('heading', { name: '发红包' }).closest('div')!;
     await userEvent.clear(within(sendBox).getByPlaceholderText('金额(ETH)'));
     await userEvent.type(within(sendBox).getByPlaceholderText('金额(ETH)'), amount);
@@ -70,24 +75,28 @@ function fillAndClickCreate = async (amount: string, shares: string, expireAt: s
     await userEvent.click(within(sendBox).getByRole('button', { name: '发红包' }));
 };
 
-function fillAndClickClaim = async (id: string) => {
+const fillAndClickClaim = async (id: string): Promise<void> => {
     const claimBox = screen.getByRole('heading', { name: '抢红包' }).closest('div')!;
     await userEvent.clear(within(claimBox).getByPlaceholderText('红包ID'));
     await userEvent.type(within(claimBox).getByPlaceholderText('红包ID'), id);
     await userEvent.click(within(claimBox).getByRole('button', { name: '抢红包' }));
 };
 
+// ---------- Tests ----------
 describe('<App />', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // window.ethereum.request 在 setupTests 里已存在；这里给出默认分支
+
+        // 在 test/setupTests.ts 里已放置了 window.ethereum 的基础 mock
+        // 这里按需覆盖 request 的默认行为
         (window.ethereum.request as jest.Mock).mockResolvedValue(undefined);
     });
 
     it('初始化时渲染 WalletConnect，并注册合约事件监听', async () => {
         render(<App />);
         expect(await screen.findByTestId('wallet-connect')).toBeInTheDocument();
-        // initContract 会对合约注册事件
+
+        // initContract 应注册事件
         expect(contractOnMock).toHaveBeenCalledWith('RedPacketCreated', expect.any(Function));
         expect(contractOnMock).toHaveBeenCalledWith('RedPacketClaimed', expect.any(Function));
         expect(contractOnMock).toHaveBeenCalledWith('RedPacketExhausted', expect.any(Function));
@@ -98,21 +107,21 @@ describe('<App />', () => {
 
         await fillAndClickCreate('0.1', '3', '1700000000');
 
-        // 检查参数：份数 / 过期时间戳 / value（wei）
+        // 检查 createRedPacket 参数：份数 / 过期时间戳 / value
         expect(createRedPacketMock).toHaveBeenCalledWith(
             3,
             1700000000,
             expect.objectContaining({ value: 100000000000000000n }) // 0.1 ETH
         );
 
-        // wait resolve 后的提示
+        // 提示
         expect(await screen.findByText('✅ 发红包交易成功')).toBeInTheDocument();
     });
 
     it('发红包失败时显示错误信息', async () => {
         (createRedPacketMock as jest.Mock).mockRejectedValueOnce(new Error('boom'));
-        render(<App />);
 
+        render(<App />);
         await fillAndClickCreate('0.2', '2', '1700000001');
 
         expect(await screen.findByText(/❌ 发红包失败: boom/)).toBeInTheDocument();
@@ -120,7 +129,6 @@ describe('<App />', () => {
 
     it('抢红包成功后提示“已提交”', async () => {
         render(<App />);
-
         await fillAndClickClaim('42');
 
         expect(claimMock).toHaveBeenCalledWith(42);
