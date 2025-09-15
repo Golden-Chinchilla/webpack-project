@@ -12,6 +12,7 @@
         "moduleResolution": "Bundler", // TS5 的“打包器式”解析，和 webpack/vite 的解析更一致（不强求文件后缀）。
         // 如果你的 TS 版本 < 5，可改用 "NodeNext"
         /* React / JSX */
+        "allowImportingTsExtensions": true,
         "jsx": "react-jsx", // 使用 React 17+ 的新 JSX 变换（无需手写 import React）。
         /* 严格性与输出 */
         "strict": true, // 开启一揽子严格检查（强烈建议，早发现问题）。

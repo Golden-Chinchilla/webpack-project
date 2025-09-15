@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { WalletConnect } from "./WalletConnect";
+
+import { WalletConnect } from "./WalletConnect.tsx";
 import RedPacketABI from "./RedPacket.json";
 
 const CONTRACT_ADDRESS = "0x46664598500B156876782039bBB008972cBDf7b7";

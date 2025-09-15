@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import importPlugin from "eslint-plugin-import";
-import tailwind from "eslint-plugin-tailwindcss";
+// import tailwind from "eslint-plugin-tailwindcss";
 
 export default [
     // 忽略产物与三方
@@ -20,6 +20,7 @@ export default [
         languageOptions: {
             ecmaVersion: "latest",
             sourceType: "module",
+            parser: tseslint.parser,
             globals: {
                 ...globals.browser,
                 ...globals.node, // webpack 配置、脚本里会用到 Node 全局
@@ -32,7 +33,7 @@ export default [
             react,
             "react-hooks": reactHooks,
             import: importPlugin,
-            tailwindcss: tailwind,
+            // tailwindcss: tailwind,
         },
         settings: {
             react: { version: "detect" }, // 自动探测 React 版本
@@ -58,8 +59,8 @@ export default [
             "no-console": "off",
 
             /** Tailwind（按需开启/关闭） */
-            "tailwindcss/classnames-order": "warn",
-            "tailwindcss/no-custom-classname": "off", // 允许你自定义 class
+            // "tailwindcss/classnames-order": "warn",
+            // "tailwindcss/no-custom-classname": "off",
         },
     },
 
@@ -69,6 +70,18 @@ export default [
         languageOptions: {
             globals: globals.node,
             sourceType: "module",
+        },
+    },
+    {
+        files: ['webpack.config.*', '*.config.cjs', 'scripts/**/*.js'],
+        languageOptions: {
+            sourceType: 'commonjs',
+            globals: { ...globals.node },   // 让 ESLint 知道是 Node 环境
+        },
+        rules: {
+            '@typescript-eslint/no-require-imports': 'off',
+            // 如果你启用了 eslint-plugin-import 的 no-commonjs，也一起关掉：
+            // 'import/no-commonjs': 'off',
         },
     },
 ];
