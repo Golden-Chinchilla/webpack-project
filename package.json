@@ -51,6 +51,7 @@
     "@testing-library/dom": "^9",
     "@types/jest": "^30.0.0",
     "@types/minimatch": "^6.0.0",
+    "@types/node": "^24.5.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "clean-webpack-plugin": "^4.0.0",

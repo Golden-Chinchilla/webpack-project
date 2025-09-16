@@ -4,7 +4,8 @@ import { JsonRpcProvider } from "ethers";
 
 // IDE 虽然提示找不到，但实际上webpack已经全局定义了
 // 通过 new webpack.DefinePlugin 在 webpack.config.js 中定义
-const infuraKey = INFURA_KEY;
+// const infuraKey = INFURA_KEY;
+const infuraKey = process.env.INFURA_KEY ?? '';
 
 // 网络配置
 const NETWORKS = {
@@ -214,7 +215,7 @@ export const WalletConnect: React.FC = () => {
 
   useEffect(() => {
     if (isMetaMaskInstalled()) {
-      console.log(infuraKey);
+      // console.log(infuraKey);
 
       const handleAccountsChanged = (accounts: string[]) => {
         if (accounts.length === 0) {
@@ -297,7 +298,7 @@ export const WalletConnect: React.FC = () => {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 flex items-center justify-between text-sm font-medium transition-colors"
           >
-            <span>{getNetworkName(wallet.chainId)}</span>
+            <span>{getNetworkName(wallet?.chainId)}</span>
             <ChevronDown size={16} className={`transform transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
@@ -308,7 +309,7 @@ export const WalletConnect: React.FC = () => {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm flex items-center justify-between"
               >
                 <span>Ethereum Mainnet</span>
-                {wallet.chainId === '0x1' && (
+                {wallet?.chainId === '0x1' && (
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 )}
               </button>
@@ -317,7 +318,7 @@ export const WalletConnect: React.FC = () => {
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm flex items-center justify-between border-t border-gray-100"
               >
                 <span>Ethereum Sepolia</span>
-                {wallet.chainId === '0xaa36a7' && (
+                {wallet?.chainId === '0xaa36a7' && (
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 )}
               </button>
@@ -353,7 +354,7 @@ export const WalletConnect: React.FC = () => {
                   <Copy size={14} />
                 </button>
                 <a
-                  href={`${wallet.chainId === '0x1' ? 'https://etherscan.io' : 'https://sepolia.etherscan.io'}/address/${wallet.address}`}
+                  href={`${wallet?.chainId === '0x1' ? 'https://etherscan.io' : 'https://sepolia.etherscan.io'}/address/${wallet.address}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-gray-600 transition-colors"

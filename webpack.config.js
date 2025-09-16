@@ -34,7 +34,7 @@ module.exports = {
             template: path.resolve(__dirname, "public/index.html"), // 以它为模板
         }),
         new webpack.DefinePlugin({
-            'INFURA_KEY': JSON.stringify(process.env.INFURA_KEY),
+            'process.env.INFURA_KEY': JSON.stringify(process.env.INFURA_KEY),
         }),
     ],
 };

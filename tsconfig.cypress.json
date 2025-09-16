@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "types": [
+            "cypress",
+            "node"
+        ]
+    },
+    "include": [
+        "tests/e2e/**/*.ts",
+        "tests/e2e/**/*.tsx"
+    ]
+}
