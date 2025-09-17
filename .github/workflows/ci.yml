@@ -34,7 +34,6 @@ jobs:
       # 你的项目里已经能直接调用 jest 命令/脚本，就保持最小侵入
       - name: Run Jest (CI mode + coverage)
         run: |
-          # 若你已有 `yarn test:ci` 就把下一行换成它
           yarn run test
         env:
           CI: true
