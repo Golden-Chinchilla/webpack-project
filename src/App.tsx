@@ -3,7 +3,6 @@ import { ethers } from "ethers";
 
 import { WalletConnect } from "./WalletConnect.tsx";
 import RedPacketABI from "./RedPacket.json";
-import { log } from "console";
 
 const CONTRACT_ADDRESS = "0x46664598500B156876782039bBB008972cBDf7b7";
 
@@ -15,12 +14,7 @@ export default function App() {
   const [shares, setShares] = useState("1");
   const [expireAt, setExpireAt] = useState("");
   const [packetId, setPacketId] = useState("");
-  console.log("INFURA_KEY prefix:", process.env.INFURA_KEY?.slice(0, 6));
-  console.log('test');
 
-
-
-  /** 初始化合约 */
   async function initContract() {
     if (!window.ethereum) return;
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -28,7 +22,6 @@ export default function App() {
     const c = new ethers.Contract(CONTRACT_ADDRESS, RedPacketABI, signer);
     setContract(c);
 
-    // 事件监听
     c.on("RedPacketCreated", (id) => {
       setMessage(`🎉 红包已创建！ID: ${id.toString()}`);
     });
