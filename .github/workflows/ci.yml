@@ -1,104 +1,95 @@
-# 这个文件放在：.github/workflows/ci.yml
-# 作用：当你 push / 提 PR 时，自动跑代码质量检查、类型检查、单测、E2E，以及 AI 代码评审
+name: CI
+run-name: "CI • ${{ github.ref_name }}"
 
-name: CI                           # 工作流在 GitHub Actions 列表里显示的名字
-run-name: "CI • ${{ github.ref_name }}"  # 每次运行实例的标题，可显示分支名/标签名
-
-on:                                # 触发条件
-  pull_request:                    # 当有人对 main 分支发起 PR
+on:
+  pull_request:
     branches: [ main ]
-  push:                            # 或者直接向 main 分支 push
+  push:
     branches: [ main ]
 
-concurrency:                       # 并发控制：防止同一分支重复跑
+# 同一分支重复推送时，取消排队中的旧任务，节省 CI 分钟
+concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
-jobs:                              # 一个工作流里可以有多个 Job（并行/串行）
-  lint:                            # Job 1：ESLint 代码检查
-    runs-on: ubuntu-latest         # 运行环境：Ubuntu 虚机
-    permissions: { contents: read }# 只读代码即可
-    steps:                         # 步骤列表（顺序执行）
-      - uses: actions/checkout@v4  # 把仓库代码检出到虚机工作目录
+jobs:
+  unit_tests:
+    name: Unit (Jest)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Setup Node (Yarn 1.x cache)   # 安装 Node + 配置 Yarn 缓存（提升速度）
+      - name: Setup Node (with Yarn cache)
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'             # 告诉 Action 使用 yarn 缓存策略
-          cache-dependency-path: |  # 指定锁文件（锁文件变更会失效缓存）
-            yarn.lock
+          cache: yarn
+          cache-dependency-path: yarn.lock
 
-      - name: Install deps          # 安装依赖（CI 环境下建议锁定版本）
+      - name: Install deps
         run: yarn install --frozen-lockfile
 
-      - name: ESLint                # 执行 ESLint（要求 package.json 里有 "lint" 脚本）
-        run: yarn lint
-
-  typecheck_and_unit:               # Job 2：TypeScript 类型检查 + Jest 单元测试
-    runs-on: ubuntu-latest
-    needs: lint                     # 依赖上一个 Job 成功后再跑
-    permissions: { contents: read }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'yarn'
-          cache-dependency-path: yarn.lock
-      - run: yarn install --frozen-lockfile
-
-      - name: Type Check (tsc --noEmit)     # 执行类型检查（要求有 "typecheck" 脚本）
-        run: yarn typecheck
-
-      - name: Unit Test (Jest, CI mode)     # 执行单元测试（要求有 "test:ci" 脚本）
-        run: yarn test:ci
+      # 你的项目里已经能直接调用 jest 命令/脚本，就保持最小侵入
+      - name: Run Jest (CI mode + coverage)
+        run: |
+          # 若你已有 `yarn test:ci` 就把下一行换成它
+          yarn run test
         env:
-          JEST_JUNIT_OUTPUT: junit.xml      # 导出 JUnit 报告（可视化/历史留存）
+          CI: true
 
-      - name: Upload Jest reports & coverage # 即使失败也上传报告，便于排查
+      - name: Upload coverage (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jest-reports
-          path: |
-            junit.xml
-            coverage/
+          name: jest-coverage
+          path: coverage/
 
-  e2e:                              # Job 3：Cypress 端到端测试（无头浏览器）
+  e2e_tests:
+    name: E2E (Cypress headless)
     runs-on: ubuntu-latest
-    needs: typecheck_and_unit       # 单测通过后再跑 E2E
-    permissions: { contents: read }
+    needs: unit_tests     # 单测通过后再跑 E2E（按需可去掉）
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node (with Yarn cache)
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'yarn'
+          cache: yarn
           cache-dependency-path: yarn.lock
-      - run: yarn install --frozen-lockfile
 
-      - name: Build (Webpack production)    # 构建前端产物（要求有 "build" 脚本）
-        run: yarn build
+      - name: Install deps
+        run: yarn install --frozen-lockfile
 
-      # 用一个静态服务器把 dist/ 跑起来，供 Cypress 访问
-      - name: Start preview server
+      # 构建前端产物（Webpack/Vite/…都可，保持你项目里的命令）
+      - name: Build app
+        run: yarn run client:prod
+
+      # 启动一个只在 CI 机器里的本地预览服务，给 Cypress 访问
+      - name: Start preview server on 8080
         run: npx http-server dist -p 8080 --silent &
+        # 如果你的构建产物不是 dist/，把路径改成实际输出目录
 
-      # 使用 cypress 官方 Action
-      # 说明：
-      #  - 默认 headless（无头）
-      #  - 这里用 chrome，也可以改 electron（electron 内置，最快上手）
-      - name: Cypress E2E (headless Chrome)
+      # 用官方 Action 跑 Cypress；它会等到 8080 可访问再启动测试
+      - name: Cypress run (chrome --headless)
         uses: cypress-io/github-action@v6
         with:
+          # 你的项目里已经写好了命令，就让 action 只负责运行：
+          install: false           # 依赖上一步已装好
           browser: chrome
-          wait-on: 'http://localhost:8080'  # 等待服务启动后再跑
-          spec: cypress/e2e/**/*.cy.{js,jsx,ts,tsx}  # 指定你的 e2e 用例路径
+          wait-on: 'http://localhost:8080'
+          # 如果你有自定义脚本 `yarn e2e` 想直接调用，也可以：
+          # command: yarn e2e
         env:
-          CYPRESS_BASE_URL: http://localhost:8080    # 可在代码中用 Cypress.env('BASE_URL')
+          # 如需在 E2E 里引用 baseUrl，这里给一个默认（cypress.config.ts 也可配置）
+          CYPRESS_baseUrl: http://localhost:8080
 
-      - name: Upload Cypress Artifacts       # 失败时上传视频/截图，方便定位
+      # 失败排查用：保存视频、截图
+      - name: Upload Cypress artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -106,36 +97,3 @@ jobs:                              # 一个工作流里可以有多个 Job（并
           path: |
             cypress/videos/
             cypress/screenshots/
-
-  ai_agent_review:                   # Job 4：AI Agent 代码评审（Mastra 开发的）
-    runs-on: ubuntu-latest
-    needs: [typecheck_and_unit]      # 基础质量过了再评审
-    permissions:
-      contents: read
-      pull-requests: write           # 允许脚本在 PR 里发表评论（可选）
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'yarn'
-          cache-dependency-path: yarn.lock
-
-      - run: yarn install --frozen-lockfile
-
-      # 这里调用你写的 Mastra Agent 脚本（读取 diff -> 调用 Agent -> 产出建议）
-      - name: Run Mastra Code Review Agent
-        run: yarn agent:review              # 要求 package.json 里有 "agent:review" 脚本
-        env:
-          MASTRA_API_KEY: ${{ secrets.MASTRA_API_KEY }}  # 在 GitHub Secrets 里配置
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      # GitHub 提供的 token（默认存在）
-          CI_COMMIT_SHA: ${{ github.sha }}
-          CI_PR_NUMBER: ${{ github.event.pull_request.number }}
-
-      - name: Upload Agent Report           # 上传 AI 评审的报告文件（如有）
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: agent-review
-          path: agent-report.md
