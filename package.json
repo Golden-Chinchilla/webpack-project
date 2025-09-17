@@ -8,7 +8,7 @@
     "client:prod": "webpack --mode production",
     "test:ui": "backstop init",
     "test:uidiff": "backstop test",
-    "test:e2e": "cypress open",
+    "test:e2e": "cypress run --browser chrome --headless",
     "test:unit": "scripty",
     "test": "jest tests/unit --collectCoverage --reporters default jest-stare",
     "lint:fix": "tsc --noEmit && eslint ./src --ext .ts,.tsx,.js,.jsx --fix",

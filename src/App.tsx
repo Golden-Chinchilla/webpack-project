@@ -14,6 +14,8 @@ export default function App() {
   const [shares, setShares] = useState("1");
   const [expireAt, setExpireAt] = useState("");
   const [packetId, setPacketId] = useState("");
+  console.log("INFURA_KEY prefix:", process.env.INFURA_KEY?.slice(0, 6));
+
 
   /** 初始化合约 */
   async function initContract() {
