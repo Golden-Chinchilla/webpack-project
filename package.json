@@ -2,6 +2,7 @@
   "name": "redpacket",
   "version": "1.0.0",
   "main": "webpack.config.js",
+  "packageManager": "yarn@1.22.22",
   "scripts": {
     "client:dev": "scripty",
     "client:server": "webpack serve --mode development",
