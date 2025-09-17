@@ -9,7 +9,8 @@ module.exports = {
     entry: "./src/index.tsx",              // 入口
     output: {
         path: path.resolve(__dirname, "dist"),
-        filename: "bundle.js"
+        filename: "bundle.js",
+        clean: true,
     },
     resolve: {
         extensions: [".ts", ".tsx", ".js"]   // 支持 ts/tsx
