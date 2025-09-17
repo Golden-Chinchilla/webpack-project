@@ -15,7 +15,6 @@ export default function App() {
   const [expireAt, setExpireAt] = useState("");
   const [packetId, setPacketId] = useState("");
 
-  /** 初始化合约 */
   async function initContract() {
     if (!window.ethereum) return;
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -23,7 +22,6 @@ export default function App() {
     const c = new ethers.Contract(CONTRACT_ADDRESS, RedPacketABI, signer);
     setContract(c);
 
-    // 事件监听
     c.on("RedPacketCreated", (id) => {
       setMessage(`🎉 红包已创建！ID: ${id.toString()}`);
     });
