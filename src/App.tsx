@@ -101,7 +101,7 @@ export default function App() {
         <input className="border p-2 w-full mb-2" placeholder="过期时间戳"
           value={expireAt} onChange={e => setExpireAt(e.target.value)} />
         <button onClick={createRedPacket}
-          className="bg-red-500 text-white px-4 py-2 rounded w-full">发红包</button>
+          className="bg-blue-500 text-white px-4 py-2 rounded w-full">发红包</button>
       </div>
 
       {/* 抢红包 */}
@@ -110,7 +110,7 @@ export default function App() {
         <input className="border p-2 w-full mb-2" placeholder="红包ID"
           value={packetId} onChange={e => setPacketId(e.target.value)} />
         <button onClick={claimRedPacket}
-          className="bg-green-500 text-white px-4 py-2 rounded w-full">抢红包</button>
+          className="bg-pink-600 text-white px-4 py-2 rounded w-full">抢红包</button>
       </div>
 
       {message && <div className="p-2 bg-yellow-100 rounded">{message}</div>}
