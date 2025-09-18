@@ -1,9 +1,11 @@
+// eslint.config.js
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import importPlugin from "eslint-plugin-import";
+// 如果你用到了 tailwind 插件，可解除下一行注释：
 // import tailwind from "eslint-plugin-tailwindcss";
 
 export default [
@@ -14,19 +16,16 @@ export default [
     js.configs.recommended,
     ...tseslint.configs.recommended,
 
-    // 你的前端源码规则
+    // 你的前端源码（浏览器环境）
     {
         files: ["src/**/*.{ts,tsx,js,jsx}"],
         languageOptions: {
             ecmaVersion: "latest",
             sourceType: "module",
             parser: tseslint.parser,
+            parserOptions: { ecmaFeatures: { jsx: true } },
             globals: {
-                ...globals.browser,
-                ...globals.node, // webpack 配置、脚本里会用到 Node 全局
-            },
-            parserOptions: {
-                ecmaFeatures: { jsx: true },
+                ...globals.browser, // window/document/console 等
             },
         },
         plugins: {
@@ -36,13 +35,19 @@ export default [
             // tailwindcss: tailwind,
         },
         settings: {
-            react: { version: "detect" }, // 自动探测 React 版本
-            // tailwindcss 插件会自动寻找 tailwind.config.js；如需指定可加：
-            // "tailwindcss": { config: "tailwind.config.js" }
+            react: { version: "detect" },
+            // 让 eslint-plugin-import 识别 TS 路径与别名
+            "import/resolver": {
+                typescript: {
+                    // 建议项目根目录放 tsconfig.json；如果是 monorepo，可指定 project
+                    // project: "./tsconfig.json",
+                },
+                node: true,
+            },
         },
         rules: {
             /** React */
-            "react/react-in-jsx-scope": "off", // 新版 React 无需显式 import React
+            "react/react-in-jsx-scope": "off",
             "react/jsx-uses-react": "off",
             "react/jsx-uses-vars": "warn",
 
@@ -64,24 +69,41 @@ export default [
         },
     },
 
-    // 对 webpack.config.* 等 Node 脚本单独放开（可选）
+    // Node 脚本（ESM/Module）：webpack、scripts、*.config.*（非 .cjs）
     {
-        files: ["webpack.config.*", "scripts/**/*.{js,ts}"],
+        files: [
+            "webpack.config.*",
+            "*.config.{js,mjs,ts}",
+            "scripts/**/*.{js,mjs,ts}",
+            // 你的 AI review 脚本如果在根目录，请加上：
+            "scripts/**/*",
+        ],
         languageOptions: {
-            globals: globals.node,
+            ecmaVersion: "latest",
             sourceType: "module",
-        },
-    },
-    {
-        files: ['webpack.config.*', '*.config.cjs', 'scripts/**/*.js'],
-        languageOptions: {
-            sourceType: 'commonjs',
-            globals: { ...globals.node },   // 让 ESLint 知道是 Node 环境
+            parser: tseslint.parser,
+            globals: {
+                ...globals.node, // process、__dirname、console …
+            },
         },
         rules: {
-            '@typescript-eslint/no-require-imports': 'off',
-            // 如果你启用了 eslint-plugin-import 的 no-commonjs，也一起关掉：
-            // 'import/no-commonjs': 'off',
+            // 在 Node 环境里无需限制 require/import 的混用（按需保留/移除）
+            "@typescript-eslint/no-require-imports": "off",
+        },
+    },
+
+    // 仅 .cjs 的 CommonJS 分组（因为上面是 module）
+    {
+        files: ["*.config.cjs", "scripts/**/*.cjs"],
+        languageOptions: {
+            ecmaVersion: "latest",
+            sourceType: "commonjs",
+            globals: {
+                ...globals.node,
+            },
+        },
+        rules: {
+            "@typescript-eslint/no-require-imports": "off",
         },
     },
 ];
