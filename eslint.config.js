@@ -1,12 +1,9 @@
-// eslint.config.js
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import importPlugin from "eslint-plugin-import";
-// 如果你用到了 tailwind 插件，可解除下一行注释：
-// import tailwind from "eslint-plugin-tailwindcss";
 
 export default [
     // 忽略产物与三方
@@ -32,17 +29,17 @@ export default [
             react,
             "react-hooks": reactHooks,
             import: importPlugin,
-            // tailwindcss: tailwind,
         },
+
         settings: {
             react: { version: "detect" },
-            // 让 eslint-plugin-import 识别 TS 路径与别名
             "import/resolver": {
                 typescript: {
-                    // 建议项目根目录放 tsconfig.json；如果是 monorepo，可指定 project
-                    // project: "./tsconfig.json",
+                    project: ["./tsconfig.json"],
                 },
-                node: true,
+                node: {
+                    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+                },
             },
         },
         rules: {
